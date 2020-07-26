@@ -1,11 +1,14 @@
 package com.example.demo.controller;
 
+import com.example.demo.bean.Chat;
 import com.example.demo.bean.Message;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.messaging.handler.annotation.MessageMapping;
 import org.springframework.messaging.handler.annotation.SendTo;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
+
+import java.security.Principal;
 
 /**
  * @author yechaoze
@@ -27,6 +30,12 @@ public class GreetController {
     @MessageMapping("/hello")
     public void greet(Message message) {
         simpMessagingTemplate.convertAndSend("/topic/greetings",message);
+    }
+
+    @MessageMapping("/chat")
+    public void chat(Principal principal, Chat chat){
+        chat.setFrom(principal.getName());
+        simpMessagingTemplate.convertAndSendToUser(chat.getTo(),"/queue/chat",chat);
     }
 
 
