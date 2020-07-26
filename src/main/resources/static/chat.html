@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>群聊</title>
+    <script src="/webjars/jquery/jquery.js"></script>
+    <script src="/webjars/sockjs-client/sockjs.js"></script>
+    <script src="/webjars/stomp-websocket/stomp.js"></script>
+</head>
+<body>
+<table>
+    <tr>
+        <td>请输入用户名</td>
+        <td><input type="text" id="name"></td>
+    </tr>
+    <tr>
+        <td><input type="button" id="connect" value="连接"></td>
+        <td><input type="button" id="disConnect" disabled="disabled" value="断开连接"></td>
+    </tr>
+</table>
+<div id="chat" style="display: none">
+    <table>
+        <tr>
+            <td>请输入聊天内容</td>
+            <td><input type="text" id="content"></td>
+            <td><input type="button" id="send" value="发送"></td>
+        </tr>
+    </table>
+    <div id="conversation">群聊进行中...</div>
+</div>
+<script>
+    $(function () {
+        $("#connect").click(function () {
+            connect()
+        })
+        $("#disConnect").click(function () {
+            if (stompClient!=null){
+                stompClient.disconnect()
+            }
+            setConnect(false);
+        })
+        $("#send").click(function () {
+            stompClient.send('/app/hello',{},JSON.stringify({'name':$('#name').val(),'content':$('#content').val()}))
+        })
+    })
+
+    var stompClient = null;
+
+    function connect() {
+        if (!$("#name")) {
+            return;
+        }
+        var socket = new SockJS('/chat');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, function (success) {
+            setConnect(true)
+            stompClient.subscribe('/topic/greetings',function (msg) {
+                showGreeting(JSON.parse(msg.body));
+            })
+        });
+    }
+
+    function setConnect(flag) {
+        $("#connect").prop("disabled", flag);
+        $("#disConnect").prop("disabled", !flag);
+        if (flag){
+            $("#chat").show()
+        }else{
+            $("#chat").hide()
+
+        }
+    }
+    
+    function showGreeting(msg) {
+        $("#conversation").append('<div>'+msg.name+':'+msg.content+'</div>')
+    }
+</script>
+</body>
+</html>
